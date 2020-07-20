@@ -5,7 +5,7 @@ def PAM_plot_mag(t,M):
 
     """This function plots the components of the magnetization. 
 
-    SYNTAX: dRlx_op = PAM_Rlx_op(T1,T2,dt,M0)
+    SYNTAX: PAM_plot_mag(t,M)
 
     INPUT:  t - Time point vector [1,n] {s}
             M - Bulk magnetization vector [3,n] or [4,n] {a.u}
@@ -30,3 +30,5 @@ def PAM_plot_mag(t,M):
     plt.show()
     
     return H
+
+# To Do -- If pass filename, then save...
