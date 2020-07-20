@@ -36,21 +36,18 @@ Tesla2Gauss=10000          # [Gauss/Tesla]
 # Tpmps_2mTpmpms = 
 # mTpmpms_2Tpmps = 
 
-# Boltzmann constant
+# Boltzmann constant -- https://en.wikipedia.org/wiki/Boltzmann_constant
 k_B = 1.38064852e-23 # [m^2.kg.s^-2.K^-1] = [J.K^-1]
 
-# Planck's constant
+# Planck's constant -- https://en.wikipedia.org/wiki/Planck_constant
 h = 6.62607015e-34      # [m^2.kg.s^-1.cycle^-1] = [J.s.cycle^-1]
 h_bar = 1.054571817e-34 # [m^2.kg.s^-1] = [J.s]
 
-# B0_demo -- pick a good field to show precession etc.
+
 
 # mu=4*pi*1e-7;         % Permeability of free space [T.m/A]
 # mu=1.25643*1e-6;      % Permeability of water [T.m/A]
 
-# math and cmath are both libraries of interest...
-
-# Could specify default units in this file
 
 # Graphics
 color_Gx     = [0.81650, 0.40825, 0.40825]    # Red (G_x)
