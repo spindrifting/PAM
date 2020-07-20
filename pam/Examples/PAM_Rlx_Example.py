@@ -1,6 +1,6 @@
 import numpy as np
 import PAM_config as PAM
-from PAM_Rlx_op import PAM_Rlx_op
+from PAM_rlx_op import PAM_rlx_op
 from PAM_plot_mag import PAM_plot_mag
 
 # PAM test of the PAM_Rlx_op function
@@ -20,12 +20,12 @@ M = np.zeros((4,len(t_vec)))
 M[:,0] = M_i # Set the initial condition
 
 # Define the relaxation operator
-dRlx_op = PAM_Rlx_op(T1,T2,dt,M0)
+drlx_op = PAM_rlx_op(T1,T2,dt,M0)
 
 # Define the relaxation time course
 t_ind=1
 for t in np.r_[0:t_vec.size-1]:
-    M[:,t_ind] = dRlx_op@M[:,t_ind-1]
+    M[:,t_ind] = drlx_op@M[:,t_ind-1]
 #    M[:, t_ind] = np.matmul(dRlx_op, M[:, t_ind - 1]) # https://github.com/numpy/numpy/issues/12736
 t_ind += 1
 
