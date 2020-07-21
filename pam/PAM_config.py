@@ -20,6 +20,9 @@ gamma_23Na  =  11.262e6
 gamma_31P   =  17.235e6
 gamma_129Xe = -11.777e6
 
+# Relaxometry
+# Define several rho, T1, T2, and T2* values for common tissues at 1.5T and 3T. Keep references.
+
 # Define 
 eps = np.spacing(1)        # Epsilon used for floating point calculations
 
