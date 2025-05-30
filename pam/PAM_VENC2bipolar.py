@@ -6,56 +6,71 @@ import numpy as np
 
 def PAM_VENC2bipolar(venc, sys):
     """
-    Generate a bipolar gradient waveform for a given VENC using system constraints.
+    Generate a bipolar gradient waveform in T/m for a given VENC using system constraints.
 
     Parameters:
         venc : float
             Velocity encoding in cm/s.
         sys : dict
             Dictionary with system parameters:
-                'gamma' : gyromagnetic ratio [Hz/T]
-                'gmax'  : maximum gradient amplitude [T/m]
-                'smax'  : maximum slew rate [T/m/s]
-                'dt'    : time step [s]
+                'sys['gamma']' : gyromagnetic ratio [Hz/T]
+                'sys['gmax']'  : maximum gradient amplitude [T/m]
+                'sys['smax']'  : maximum slew rate [T/m/s]
+                'sys['dt']'    : time step [s]
 
     Returns:
-        gg : ndarray
+        g_bipolar : ndarray
             Bipolar gradient waveform [T/m]
     """
-    # Convert VENC to m/s
-    venc_mps = venc / 100.0
+    venc_mps = venc / 100.0  # Convert to [m/s]
 
-    # Extract system parameters
-    gamma = sys['gamma']
-    gmax = sys['gmax']
-    smax = sys['smax']
-    dt = sys['dt']
+    # Required first moment [s·m/T]
+    M1_target = np.pi / (sys['gamma'] * venc_mps)
 
-    # Compute required M1
-    M1_target = np.pi / (gamma * venc_mps)  # [T·s²/m]
+    # Design g_ramp time and samples
+    ramp_time = sys['gmax'] / sys['smax']  # time to g_ramp to sys['gmax'] in [s]
+    ramp_samples = int(np.ceil(ramp_time / sys['dt']))  # Number of samples on ramp [#]
+    t_ramp = np.linspace(0, ramp_time, ramp_samples, endpoint=False)  # Times that accord with ramp steps [s]
+    g_ramp = (sys['smax'] * t_ramp)  # Linear gradient ramp, g_ramp: g [T/m] = S_max [T/m/s] * t [s]
 
-    # Generate basic triangular gradient lobe
-    ramp_time = gmax / smax  # [s]
-    ramp_samples = int(np.ceil(ramp_time / dt))
+    # Initial g_lobe with g_ramp up and g_ramp down
+    g_lobe = np.concatenate((g_ramp, g_ramp[::-1]))  # [T/m]
 
-    # Triangular lobe: ramp up and ramp down
-    ramp_up = np.linspace(0, gmax, ramp_samples, endpoint=False)
-    ramp_down = np.linspace(gmax, 0, ramp_samples, endpoint=False)
-    lobe = np.concatenate((ramp_up, ramp_down))
+    # Bipolar waveform: positive g_lobe then negative g_lobe
+    g_bipolar = np.concatenate((g_lobe, -g_lobe))
 
-    # Bipolar: positive lobe followed by negative lobe
-    gg = np.concatenate((lobe, -lobe))
+    # Time vector for current g_bipolar
+    time = np.arange(len(g_bipolar)) * sys['dt']  # [s]
+    M1 = np.sum(g_bipolar * time) * sys['dt']     # [s·m/T]
 
-    # Compute M1 of this waveform
-    time = np.arange(len(gg)) * dt
-    M1_actual = np.sum(gg * time) * dt
+    # If M1 is too small, extend with flat top
+    if M1 < M1_target:
+        # Estimate flat-top duration needed
+        remaining_M1 = M1_target - M1
+        # Use sys['gmax'] to get time needed for flat top
+        # For flat top, M1_flat = g * t_flat * (offset_time + 0.5*t_flat)
+        t_flat = remaining_M1 / (sys['gmax'] * (time[-1] + 0.5 * sys['dt']))  # rough estimate
+        flat_samples = int(np.ceil(t_flat / sys['dt']))
+        flat = np.ones(flat_samples) * sys['gmax']
 
-    # Scale to achieve target M1
-    scaling = M1_target / M1_actual
-    gg *= scaling
+        # New g_lobe with flat top
+        g_lobe = np.concatenate((g_ramp, flat, g_ramp[::-1]))
+        g_bipolar = np.concatenate((g_lobe, -g_lobe))
 
-    # Safety check
-    if np.max(np.abs(gg)) > gmax:
-        raise ValueError("Required VENC cannot be achieved within gmax/smax limits.")
+        # Recompute M1 of extended g_lobe
+    #    time = np.arange(len(g_bipolar)) * sys['dt']
+    #    M1 = np.sum(g_bipolar * time) * sys['dt']
 
-    return gg
+    # Time vector for bipolar
+    time = np.arange(len(g_bipolar)) * sys['dt']
+    M1_actual = np.sum(g_bipolar * time) * sys['dt']
+
+    # Scale waveform to match exact target M1
+    scale = M1_target / M1_actual
+    g_bipolar *= scale
+
+    # Final check
+    if np.max(np.abs(g_bipolar)) > sys['gmax'] + 1e-6:
+        raise ValueError(f"Gradient exceeds sys['gmax']: {np.max(np.abs(g_bipolar)):.4f} > {sys['gmax']} T/m")
+
+    return g_bipolar

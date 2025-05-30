@@ -1,5 +1,8 @@
 import numpy as np
 
+import os
+print(os.getcwd())
+
 import pam.PAM_config
 # from pam import PAM_config
 from pam.operators.PAM_rlx_op import PAM_rlx_op
